@@ -2,7 +2,10 @@
 
 %% This work reshuffles the success tracked particles
 %Get the number of iterations to run from the app.track
+
 MJnumcolumn_m2 = size(app.init_track);
+
+
 %Result usually comes through as a double, we just want the end value (max)
 MJnumcolumn_m = max(MJnumcolumn_m2);
 
@@ -69,7 +72,6 @@ xy = app.boundaryLimitsM(:,1:2);
 x = xy(:,1);
 y = xy(:,2);
 
-
 %% Temporal Analysis
 outside = 1;  
 grid_val = app.ResolutionmpxEditField.Value*app.BlocksizepxEditField.Value  ;
@@ -78,26 +80,38 @@ grid_val = app.ResolutionmpxEditField.Value*app.BlocksizepxEditField.Value  ;
 % given in KLT
 [X,Y] = meshgrid(min(x)-outside:grid_val:max(x)+outside, min(y)-outside:grid_val:max(y)+outside);    
 
-%% Deifne the ROI, Has to start with the top right for this to work 
+%% Deifne the ROI, Has to start with the top left for this to work 
 % and go clockwise
-%y1
+%y1 Bottom Right to bottom left
 m1=(y(4)-y(1))/(x(4)-x(1));
-%y2
+%y2 top right to bottom right
 m2=(y(1)-y(2))/(x(1)-x(2));
-%y3
+%y3 Top left to top right
 m3=(y(2)-y(3))/(x(2)-x(3));
-%y4
+%y4 bottom left to top left
 m4=(y(3)-y(4))/(x(3)-x(4));
 
+%Bottom
 Ytest1=m1*(X(1,:)-x(1))+y(1);
+
+%RHS
 Ytest2=m2*(X(1,:)-x(2))+y(2);
+
+%Top
 Ytest3=m3*(X(1,:)-x(3))+y(3);
+
+%LHS
 Ytest4=m4*(X(1,:)-x(4))+y(4);
 
+%Comment these out one by one if you cant get it to work
 YY=Y;
+%Bottom
 YY(YY<Ytest1)=NaN;
+%RHS
 YY(YY<Ytest2)=NaN;
+%Top
 YY(YY>Ytest3)=NaN;
+%LHS
 YY(YY>Ytest4)=NaN;
 
 YY(~isnan(YY))=1;
@@ -148,7 +162,24 @@ true4(true4==0) = NaN;
 newXXX = X.*true4;
 newYYY = Y.*true4;
 
-
+regionofinterest = figure('Name', 'Region of Interest','Color','w')
+[X,Y] = meshgrid(min(x)-outside:grid_val:max(x)+outside, min(y)-outside:grid_val:max(y)+outside);   
+hold on 
+hm = mesh(X,Y,X*0);  
+hp = plot([x],[y],'r-') 
+set(hm,'EdgeColor','k')  
+set(hp,'LineWidth',2)  
+set(gca,'Visible','off')
+hold off
+%     
+figure(regionofinterest)
+hold on
+plot(XXX,YYY,'or','MarkerFaceColor','r','MarkerSize',5)
+figure(regionofinterest)
+hold on
+plot(newXXX,newYYY,'or','MarkerFaceColor','g','MarkerSize',5)
+hold off
+% 
 %% Need to start segregating the data into its grid
 MeanGridDensity = nan(1,MJnumcolumn_m2(2));
 TracePointDensity = MeanGridDensity;
@@ -229,6 +260,16 @@ MJSDI = ((Dispersion)./(TracePointDensity))./ IdealSDI;
 %ALONSO'S SDI WORK:
 SDI = ((Dispersion.^0.1)./(TracePointDensity./(1.02E-03)));
 
+tensec = 10/ app.ExtractionratesEditField.Value(1);
+MJSDImean = movmean(MJSDI,tensec ,'Endpoints','discard');
+SDImean = movmean(SDI,tensec , 'Endpoints','discard');
+
+[valMJ indMJ] = min(MJSDImean(:));
+[valSDI indSDI] = min(SDImean(:));
+[valMJbad indMJbad] = max(MJSDImean(:));
+[valSDIbad indSDIbad] = max(SDImean(:));
+
+
 %% Plotting
 figure('Name', 'SDI Results')
 subplot(5,1,1)
@@ -247,12 +288,20 @@ xlabel('Interval (Extraction Rate * s)')
 ylabel('CV Grid Density')
 
 subplot(5,1,4)
-plot(MJnumcolumn_m2(1):(MJnumcolumn_m2(2)),SDI)
+plot(MJnumcolumn_m2(1):(MJnumcolumn_m2(2)),SDIConstants)
+hold on
+scatter(indSDI,valSDI)
+scatter(indSDIbad,valSDIbad)
+hold off
 xlabel('Interval (Extraction Rate * s)')
 ylabel('SDI')
 
 subplot(5,1,5)
 plot(MJnumcolumn_m2(1):(MJnumcolumn_m2(2)),MJSDI)
+hold on
+scatter(indMJ,valMJ)
+scatter(indMJbad,valMJbad)
+hold off
 xlabel('Interval (Extraction Rate * s)')
 ylabel('MJSDI')
 
@@ -264,36 +313,43 @@ ylabel('MJSDI')
 % %% Collates all of the x and y points of the successfull tracers into two
 % %seperate variables for a full analysis on the whole video
 
-% WW1=[]
-% WW2=[]
-% if W1 == 0 
-%     for i = 1:MJnumcolumn_m
-%         WW1 = [WW1; MJtablesuccess{1,i}{1}(:,1)];
-%         WW2 = [WW2; MJtablesuccess{1,i}{1}(:,2)];
-%     end
-% else
-%     WW1=[];
-%     WW2=[];
-%     for i = 1:MJnumcolumn_m
-%         WW1 = [WW1; MJtablesuccess{1,i}{1}(:,1)];
-%         WW2 = [WW2; MJtablesuccess{1,i}{1}(:,2)];
-%     end  
-% end
-% 
+WW1=[]
+WW2=[]
+if W1 == 0 
+    for i = 1:MJnumcolumn_m
+        WW1 = [WW1; MJtablesuccess{1,i}{1}(:,1)];
+        WW2 = [WW2; MJtablesuccess{1,i}{1}(:,2)];
+    end
+else
+    WW1=[];
+    WW2=[];
+    for i = 1:MJnumcolumn_m
+        WW1 = [WW1; MJtablesuccess{1,i}{1}(:,1)];
+        WW2 = [WW2; MJtablesuccess{1,i}{1}(:,2)];
+    end  
+end
 
 
-% %% Plot the seeding density graph of the ROI 
 
-%     histWW = [WW1,WW2];
-%     NN = hist3(histWW,'Ctrs',{(min(V1):grid_val:max(V1)) min(V2):grid_val:max(V2)});
-%     HistoAll = figure('Name', 'Seeding Histogram')
-%     hist3(histWW,'Ctrs',{(min(V1):grid_val:max(V1)) min(V2):grid_val:max(V2)})
+%% Plot the seeding density graph of the ROI 
+
+    histWW = [WW1,WW2];
+    NN = hist3(histWW,'Ctrs',{(min(V1):grid_val:max(V1)) min(V2):grid_val:max(V2)});
+    HistoAll = figure('Name', 'Seeding Histogram')
+    hist3(histWW,'Ctrs',{(min(V1):grid_val:max(V1)) min(V2):grid_val:max(V2)})
+    hold on 
+    hm = mesh(X,Y,X*0);  
+    hp = plot([x],[y],'r-') 
+    set(hm,'EdgeColor','k')  
+    set(hp,'LineWidth',2)  
+    set(gca,'Visible','on')
+    hold off
        
-%% Scatter Plot to help visualise the starting points (blue) of the tracers 
-%within the region of interest (Not green)
-
-%Uncomment from here \/
-
+% % Scatter Plot to help visualise the starting points (blue) of the tracers 
+% % within the region of interest (Not green)
+% 
+% %Uncomment from here \/
+% 
 % for col = MJnumcolumn_m2(1):MJnumcolumn_m2(2)
 %         
 %     orthopoints = figure('Name','Orthopoints')
@@ -302,9 +358,9 @@ ylabel('MJSDI')
 %     scatter(background(:,1),background(:,2),1,'green')  
 % 
 %     scatter(MJtablesuccess{1,col}{1}(:,1),MJtablesuccess{1,col}{1}(:,2),1,'blue')
-% % 
-% %     scatter(MJtablefailed{1,col}{1}(:,1),MJtablefailed{1,col}{1}(:,2),3,'black')
-% % 
-% %     scatter(MJtablefailed{1,col}{1}(:,3),MJtablefailed{1,col}{1}(:,4),3,'red')
+% 
+%     scatter(MJtablefailed{1,col}{1}(:,1),MJtablefailed{1,col}{1}(:,2),3,'black')
+% 
+%     scatter(MJtablefailed{1,col}{1}(:,3),MJtablefailed{1,col}{1}(:,4),3,'red')
 %     
 % end
