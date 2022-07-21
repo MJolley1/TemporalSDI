@@ -45,7 +45,7 @@ MJtablefailed = cell2table(MJcell);
 %seen below (0,1, or 2), depending on what values you want to leave. This
 %is for successfull tracers
 for i = 1 : MJnumcolumn_m
-    MJtablesuccess{1,i}{1,1}(any((MJtablesuccess{1,i}{1,1}==1),2), : ) = [];
+    MJtablesuccess{1,i}{1,1}(any((MJtablesuccess{1,i}{1,1}==0),2), : ) = [];
     MJtablesuccess{1,i}{1,1}(any((MJtablesuccess{1,i}{1,1}==2),2), : ) = [];
 end
 
@@ -53,7 +53,7 @@ end
 %seen below (0,1, or 2), depending on what values you want to leave. This
 %is for unsuccessfull tracers
 for i = 1 : MJnumcolumn_m
-    MJtablefailed{1,i}{1,1}(any((MJtablefailed{1,i}{1,1}==0),2), : ) = [];
+    MJtablefailed{1,i}{1,1}(any((MJtablefailed{1,i}{1,1}==1),2), : ) = [];
     MJtablefailed{1,i}{1,1}(any((MJtablefailed{1,i}{1,1}==2),2), : ) = [];
 end
 
@@ -288,7 +288,7 @@ xlabel('Interval (Extraction Rate * s)')
 ylabel('CV Grid Density')
 
 subplot(5,1,4)
-plot(MJnumcolumn_m2(1):(MJnumcolumn_m2(2)),SDIConstants)
+plot(MJnumcolumn_m2(1):(MJnumcolumn_m2(2)),SDI)
 hold on
 scatter(indSDI,valSDI)
 scatter(indSDIbad,valSDIbad)
